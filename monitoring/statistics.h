@@ -5,6 +5,7 @@
 //
 #pragma once
 #include <atomic>
+#include <fstream>
 #include <map>
 #include <string>
 #include <vector>
@@ -15,6 +16,7 @@
 #include "rocksdb/statistics.h"
 #include "util/core_local.h"
 #include "util/mutexlock.h"
+#include "include/rocksdb/perf_context.h"
 
 #ifdef __clang__
 #define ROCKSDB_FIELD_UNUSED __attribute__((__unused__))
@@ -29,6 +31,9 @@
 
 namespace ROCKSDB_NAMESPACE {
 
+struct PerfContext;
+extern thread_local PerfContext perf_context;
+
 enum TickersInternal : uint32_t {
   INTERNAL_TICKER_ENUM_START = TICKER_ENUM_MAX,
   INTERNAL_TICKER_ENUM_MAX
@@ -37,6 +42,65 @@ enum TickersInternal : uint32_t {
 enum HistogramsInternal : uint32_t {
   INTERNAL_HISTOGRAM_START = HISTOGRAM_ENUM_MAX,
   INTERNAL_HISTOGRAM_ENUM_MAX
+};
+
+
+const uint64_t CUS_STATE_BUFF_SIZE = 4096;
+
+struct CustomState {
+  struct DiskCountMatrix {
+    int index_block_count;
+    int filter_block_count;
+    int tail_block_count;
+    int block_count;
+  };
+  // 一般来说不可能有这么多level，以0xffff标记没有找到
+  static const int NOT_FOUND_LEVEL = 0xffff;
+  std::ofstream o;
+  int level; // -1 表示没有初始化
+
+  uint64_t tm; // 所用的时间
+  DiskCountMatrix disk_matrix;
+  // 开始统计disk
+  void StartDisk() {
+    disk_matrix.block_count = perf_context.block_read_count;
+    disk_matrix.filter_block_count = perf_context.filter_block_read_count;
+    disk_matrix.index_block_count = perf_context.index_block_read_count;
+    disk_matrix.tail_block_count = perf_context.sst_tail_read_count;
+  }
+
+  CustomState() {
+    o.open("./read_statistic.txt");
+    o << "level:disk_count(tail_block:filter_block:index_block:block):time" << std::endl;
+    level = -1;
+    StartDisk();
+  }
+
+  ~CustomState() {
+    o.close();
+  }
+
+  void SetLevel(int l) {
+    level = l;
+  }
+
+
+  void SetTime(uint64_t t) {
+    tm = t;
+    int disk_count = perf_context.block_read_count - disk_matrix.block_count +
+                         perf_context.sst_tail_read_count - disk_matrix.tail_block_count;
+    o << level << ":" << disk_count
+            << "("
+            << perf_context.sst_tail_read_count - disk_matrix.tail_block_count << ":"
+            << perf_context.filter_block_read_count -  disk_matrix.filter_block_count << ":"
+            << perf_context.index_block_read_count - disk_matrix.index_block_count
+            << perf_context.block_read_count -  disk_matrix.block_count << ":"
+            << ")"
+            << tm << std::endl;
+    StartDisk();
+    level = -1;
+  }
+
 };
 
 class StatisticsImpl : public Statistics {
@@ -105,7 +169,7 @@ class StatisticsImpl : public Statistics {
 #endif
 
   CoreLocalArray<StatisticsData> per_core_stats_;
-
+  CustomState cus_stat_;
   uint64_t getTickerCountLocked(uint32_t ticker_type) const;
   std::unique_ptr<HistogramImpl> getHistogramImplLocked(
       uint32_t histogram_type) const;

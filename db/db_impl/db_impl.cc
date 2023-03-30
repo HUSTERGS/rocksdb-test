@@ -2117,7 +2117,8 @@ Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
         if (get_impl_options.value) {
           get_impl_options.value->PinSelf();
         }
-
+        // -1表示在memtable里面命中了
+        RecordInHistogram(stats_, GET_LEVEL, 0);
         RecordTick(stats_, MEMTABLE_HIT);
       } else if ((s.ok() || s.IsMergeInProgress()) &&
                  sv->imm->Get(lkey,
@@ -2133,7 +2134,7 @@ Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
         if (get_impl_options.value) {
           get_impl_options.value->PinSelf();
         }
-
+        RecordInHistogram(stats_, GET_LEVEL, 0);
         RecordTick(stats_, MEMTABLE_HIT);
       }
     } else {
@@ -2145,12 +2146,14 @@ Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
                        false /* immutable_memtable */, nullptr, nullptr,
                        false)) {
         done = true;
+        RecordInHistogram(stats_, GET_LEVEL, 0);
         RecordTick(stats_, MEMTABLE_HIT);
       } else if ((s.ok() || s.IsMergeInProgress()) &&
                  sv->imm->GetMergeOperands(lkey, &s, &merge_context,
                                            &max_covering_tombstone_seq,
                                            read_options)) {
         done = true;
+        RecordInHistogram(stats_, GET_LEVEL, 0);
         RecordTick(stats_, MEMTABLE_HIT);
       }
     }

@@ -76,6 +76,11 @@ extern thread_local PerfContext perf_context;
     perf_context.metric += value;              \
   }
 
+#define PERF_COUNTER_GET(metric, value)        \
+  if (perf_level >= PerfLevel::kEnableCount) { \
+    value = perf_context.metric;               \
+  }
+
 // Increase metric value
 #define PERF_COUNTER_BY_LEVEL_ADD(metric, value, level)               \
   if (perf_level >= PerfLevel::kEnableCount &&                        \

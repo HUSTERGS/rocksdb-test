@@ -2352,6 +2352,9 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
         // TODO: update per-level perfcontext user_key_return_count for kMerge
         break;
       case GetContext::kFound:
+        // 统计Get在哪一层找到
+        // memtable作为第0层，由于参数value为uint64_t，所以不能用-1
+        RecordInHistogram(db_statistics_, GET_LEVEL, fp.GetHitFileLevel() + 1);
         if (fp.GetHitFileLevel() == 0) {
           RecordTick(db_statistics_, GET_HIT_L0);
         } else if (fp.GetHitFileLevel() == 1) {
@@ -2455,6 +2458,7 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
     if (key_exists != nullptr) {
       *key_exists = false;
     }
+    RecordInHistogram(db_statistics_, GET_LEVEL, CustomState::NOT_FOUND_LEVEL);
     *status = Status::NotFound();  // Use an empty error message for speed
   }
 }

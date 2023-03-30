@@ -33,6 +33,7 @@ PerfContext::PerfContext(const PerfContext& other) {
   user_key_comparison_count = other.user_key_comparison_count;
   block_cache_hit_count = other.block_cache_hit_count;
   block_read_count = other.block_read_count;
+  sst_tail_read_count = other.sst_tail_read_count;
   block_read_byte = other.block_read_byte;
   block_read_time = other.block_read_time;
   block_cache_index_hit_count = other.block_cache_index_hit_count;
@@ -153,6 +154,7 @@ PerfContext::PerfContext(PerfContext&& other) noexcept {
   user_key_comparison_count = other.user_key_comparison_count;
   block_cache_hit_count = other.block_cache_hit_count;
   block_read_count = other.block_read_count;
+  sst_tail_read_count = other.sst_tail_read_count;
   block_read_byte = other.block_read_byte;
   block_read_time = other.block_read_time;
   block_cache_index_hit_count = other.block_cache_index_hit_count;
@@ -275,6 +277,7 @@ PerfContext& PerfContext::operator=(const PerfContext& other) {
   user_key_comparison_count = other.user_key_comparison_count;
   block_cache_hit_count = other.block_cache_hit_count;
   block_read_count = other.block_read_count;
+  sst_tail_read_count = other.sst_tail_read_count;
   block_read_byte = other.block_read_byte;
   block_read_time = other.block_read_time;
   block_cache_index_hit_count = other.block_cache_index_hit_count;
@@ -394,6 +397,7 @@ void PerfContext::Reset() {
   user_key_comparison_count = 0;
   block_cache_hit_count = 0;
   block_read_count = 0;
+  sst_tail_read_count = 0;
   block_read_byte = 0;
   block_read_time = 0;
   block_cache_index_hit_count = 0;
@@ -531,6 +535,7 @@ std::string PerfContext::ToString(bool exclude_zero_counters) const {
   PERF_CONTEXT_OUTPUT(user_key_comparison_count);
   PERF_CONTEXT_OUTPUT(block_cache_hit_count);
   PERF_CONTEXT_OUTPUT(block_read_count);
+  PERF_CONTEXT_OUTPUT(sst_tail_read_count);
   PERF_CONTEXT_OUTPUT(block_read_byte);
   PERF_CONTEXT_OUTPUT(block_read_time);
   PERF_CONTEXT_OUTPUT(block_cache_index_hit_count);

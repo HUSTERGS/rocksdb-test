@@ -588,6 +588,7 @@ Status BlockBasedTable::Open(
   const bool prefetch_all = prefetch_index_and_filter_in_cache || level == 0;
   const bool preload_all = !table_options.cache_index_and_filter_blocks;
 
+  // 如果不允许mmap，那么就对footer进行预读，默认不使用mmap，因此默认会预读
   if (!ioptions.allow_mmap_reads) {
     s = PrefetchTail(ro, file.get(), file_size, force_direct_prefetch,
                      tail_prefetch_stats, prefetch_all, preload_all,
@@ -614,6 +615,7 @@ Status BlockBasedTable::Open(
   IOOptions opts;
   s = file->PrepareIOOptions(ro, opts);
   if (s.ok()) {
+    PERF_COUNTER_ADD(sst_tail_read_count, 1);
     s = ReadFooterFromFile(opts, file.get(), *ioptions.fs,
                            prefetch_buffer.get(), file_size, &footer,
                            kBlockBasedTableMagicNumber);

@@ -223,6 +223,7 @@ const std::vector<std::pair<Tickers, std::string>> TickersNameMap = {
 
 const std::vector<std::pair<Histograms, std::string>> HistogramsNameMap = {
     {DB_GET, "rocksdb.db.get.micros"},
+    {GET_LEVEL, "rocksdb.db.get.level"},
     {DB_WRITE, "rocksdb.db.write.micros"},
     {COMPACTION_TIME, "rocksdb.compaction.times.micros"},
     {COMPACTION_CPU_TIME, "rocksdb.compaction.times.cpu_micros"},
@@ -420,6 +421,14 @@ void StatisticsImpl::recordInHistogram(uint32_t histogramType, uint64_t value) {
   if (get_stats_level() <= StatsLevel::kExceptHistogramOrTimers) {
     return;
   }
+  if (histogramType == DB_GET) {
+    cus_stat_.SetTime(value);
+    return ;
+  } else if (histogramType == GET_LEVEL) {
+    cus_stat_.SetLevel(value);
+    return ;
+  }
+
   per_core_stats_.Access()->histograms_[histogramType].Add(value);
   if (stats_ && histogramType < HISTOGRAM_ENUM_MAX) {
     stats_->recordInHistogram(histogramType, value);

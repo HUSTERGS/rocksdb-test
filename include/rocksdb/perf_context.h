@@ -67,6 +67,7 @@ struct PerfContext {
   uint64_t user_key_comparison_count;  // total number of user key comparisons
   uint64_t block_cache_hit_count;      // total number of block cache hits
   uint64_t block_read_count;           // total number of block reads (with IO)
+  uint64_t sst_tail_read_count;        // total number of sst file read
   uint64_t block_read_byte;            // total number of bytes from block reads
   uint64_t block_read_time;            // total nanos spent on block reads
   uint64_t block_cache_index_hit_count;  // total number of index block hits
