@@ -6963,6 +6963,8 @@ class Benchmark {
     Duration duration(FLAGS_duration, reads_);
     uint64_t num_seek_to_first = 0;
     uint64_t num_next = 0;
+    (void) num_seek_to_first;
+    (void) num_next;
     while (!duration.Done(1)) {
       if (!iter->Valid()) {
         iter->SeekToFirst();

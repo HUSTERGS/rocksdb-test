@@ -421,12 +421,14 @@ void StatisticsImpl::recordInHistogram(uint32_t histogramType, uint64_t value) {
   if (get_stats_level() <= StatsLevel::kExceptHistogramOrTimers) {
     return;
   }
-  if (histogramType == DB_GET) {
-    cus_stat_.SetTime(value);
-    return ;
-  } else if (histogramType == GET_LEVEL) {
-    cus_stat_.SetLevel(value);
-    return ;
+  if (perf_level >= PerfLevel::kEnableCount) {
+    if (histogramType == DB_GET) {
+      cus_stat_.SetTime(value);
+      return ;
+    } else if (histogramType == GET_LEVEL) {
+      cus_stat_.SetLevel(value);
+      return ;
+    }
   }
 
   per_core_stats_.Access()->histograms_[histogramType].Add(value);
@@ -505,5 +507,9 @@ bool StatisticsImpl::getTickerMap(
 bool StatisticsImpl::HistEnabledForType(uint32_t type) const {
   return type < HISTOGRAM_ENUM_MAX;
 }
+
+thread_local CustomState::DiskCountMatrix CustomState::disk_matrix;
+thread_local int CustomState::level; // -1 表示没有初始化
+thread_local uint64_t CustomState::tm; // 所用的时间
 
 }  // namespace ROCKSDB_NAMESPACE

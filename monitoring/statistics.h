@@ -33,6 +33,7 @@ namespace ROCKSDB_NAMESPACE {
 
 struct PerfContext;
 extern thread_local PerfContext perf_context;
+extern thread_local PerfLevel perf_level;
 
 enum TickersInternal : uint32_t {
   INTERNAL_TICKER_ENUM_START = TICKER_ENUM_MAX,
@@ -57,10 +58,10 @@ struct CustomState {
   // 一般来说不可能有这么多level，以0xffff标记没有找到
   static const int NOT_FOUND_LEVEL = 0xffff;
   std::ofstream o;
-  int level; // -1 表示没有初始化
-
-  uint64_t tm; // 所用的时间
-  DiskCountMatrix disk_matrix;
+  static thread_local int level; // -1 表示没有初始化
+  static thread_local uint64_t tm; // 所用的时间
+  static thread_local DiskCountMatrix disk_matrix;
+  std::mutex m;
   // 开始统计disk
   void StartDisk() {
     disk_matrix.block_count = perf_context.block_read_count;
@@ -84,18 +85,18 @@ struct CustomState {
     level = l;
   }
 
-
   void SetTime(uint64_t t) {
     tm = t;
     int disk_count = perf_context.block_read_count - disk_matrix.block_count +
                          perf_context.sst_tail_read_count - disk_matrix.tail_block_count;
+    std::lock_guard<std::mutex> lg(m);
     o << level << ":" << disk_count
             << "("
             << perf_context.sst_tail_read_count - disk_matrix.tail_block_count << ":"
             << perf_context.filter_block_read_count -  disk_matrix.filter_block_count << ":"
-            << perf_context.index_block_read_count - disk_matrix.index_block_count
-            << perf_context.block_read_count -  disk_matrix.block_count << ":"
-            << ")"
+            << perf_context.index_block_read_count - disk_matrix.index_block_count << ":"
+            << perf_context.block_read_count -  disk_matrix.block_count
+            << ")" << ":"
             << tm << std::endl;
     StartDisk();
     level = -1;
